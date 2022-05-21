@@ -64,19 +64,24 @@ const templateHtmlStream = fs.createReadStream(path.join(__dirname, 'template.ht
 
 fs.readdir(path.join(__dirname, 'components'), (err, files) => {
   if (err) throw err;
-  files.forEach(file => {
+  files.forEach((file, index) => {
     fs.stat(path.join(__dirname, 'components', file), (err, stat) => {
       if (err) throw err;
       if (stat.isFile() && file.endsWith('.html')) {
         console.log(`add component: components/${file} - ${stat.size}bytes`);
         fs.createReadStream(path.join(__dirname, 'components', file), 'utf-8')
-          .on('data', text => components[file.split('.')[0]] = text);
+          .on('data', text => {
+            components[file.split('.')[0]] = text;
+            if (index === files.length - 1) {
+              setHtml();
+            }
+          });
       }
     });
   });
 });
 
-setTimeout(() => {
+const setHtml = () => {
   templateHtmlStream.on('data', text => {
     Object.entries(components).forEach(([key, value]) => {
       text = text.replace(`{{${key}}}`, value);
@@ -84,4 +89,4 @@ setTimeout(() => {
     indexHtmlStreamWrite.write(text);
     console.log(`create file: ${__dirname}/project-dist/index.html`);
   });
-}, 500);
+};
